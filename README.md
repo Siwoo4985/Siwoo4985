@@ -3,6 +3,7 @@
 <h1 align="center">Hi 👋, I'm Siwoo Park</h1>
 <h3 align="center">A Korean student passionate about coding and creativity.</h3>
 <h4 align="center">"Life is all about connecting the dots."</h4>
+<p align="center" style="font-style: italic; color: gray;">– Steve Jobs –</p>
 
 <p align="center">
   <img src="https://komarev.com/ghpvc/?username=siwoo4985&label=Profile%20views&color=0e75b6&style=flat" alt="siwoo4985" />
@@ -13,7 +14,7 @@
 ### 💡 About Me
 
 - 🇰🇷 I'm a middle school student based in Seoul, South Korea.  
-- 💻 I’m currently learning **HTML, CSS, Python, and Dart** — and building small but meaningful projects.  
+- 💻 I’m currently learning **HTML, CSS, Python** — and building small but meaningful projects.  
 - 🎯 I believe in **connecting ideas, people, and passion** to make cool things happen.  
 - 💬 Ask me anything about **life as a Korean student** or **what I'm building now!**  
 - 📫 You can reach me at: **Siwoose@gmail.com**
