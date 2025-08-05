@@ -3,7 +3,7 @@
 <h1 align="center">안녕하세요(Hi) 👋, I'm Siwoo Park</h1>
 <h3 align="center">A Korean student passionate about coding and creativity.</h3>
 <h4 align="center">"Life is all about connecting the dots."</h4>
-<p align="center" style="font-style: italic; color: gray;">– Steve Jobs –</p>
+<p align="center"><em>– Steve Jobs –</em></p>
 
 <p align="center">
   <img src="https://komarev.com/ghpvc/?username=siwoo4985&label=Profile%20views&color=0e75b6&style=flat" alt="siwoo4985" />
@@ -18,6 +18,25 @@
 - 🎯 I believe in **connecting ideas, people, and passion** to make cool things happen.  
 - 💬 Ask me anything about **life as a Korean student** or **what I'm building now!**  
 - 📫 You can reach me at: **Siwoose@gmail.com**
+
+---
+
+### 💬 Steve Jobs Quotes
+
+> “Stay hungry, stay foolish.”  
+> — *Steve Jobs*
+
+> “Innovation distinguishes between a leader and a follower.”  
+> — *Steve Jobs*
+
+> “Design is not just what it looks like and feels like. Design is how it works.”  
+> — *Steve Jobs*
+
+> “The people who are crazy enough to think they can change the world are the ones who do.”  
+> — *Steve Jobs*
+
+> “Sometimes life hits you in the head with a brick. Don’t lose faith.”  
+> — *Steve Jobs*
 
 ---
 
