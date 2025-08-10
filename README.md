@@ -1,6 +1,6 @@
 ### about me
 
-<h1 align="center">안녕하세요(Hi) 👋, I'm Siwoo Park</h1>
+<h1 align="center">안녕하세요(Hello) 👋, I'm Siwoo Park</h1>
 <h3 align="center">A Korean student passionate about coding and creativity.</h3>
 <h4 align="center">"Life is all about connecting the dots."</h4>
 <p align="center"><em>– Steve Jobs –</em></p>
