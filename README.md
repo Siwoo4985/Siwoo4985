@@ -1,6 +1,6 @@
 ### about me
 
-<h1 align="center">안녕하세요(Hello) 👋, I'm Siwoo Park</h1>
+<h1 align="center">안녕하세요(Hello) 👋, I'm S.P.</h1>
 <h3 align="center">A Korean student passionate about coding and creativity.</h3>
 <h4 align="center">"Life is all about connecting the dots."</h4>
 <p align="center"><em>– Steve Jobs –</em></p>
@@ -13,11 +13,8 @@
 
 ### 💡 About Me
 
-- 🇰🇷 I'm a middle school student based in Seoul, South Korea.  
-- 💻 I’m currently learning **HTML, CSS, Python** — and building small but meaningful projects.  
+- 🇰🇷 I'm a student living in Korea.
 - 🎯 I believe in **connecting ideas, people, and passion** to make cool things happen.  
-- 💬 Ask me anything about **life as a Korean student** or **what I'm building now!**  
-- 📫 You can reach me at: **Siwoose@gmail.com**
 
 ---
 
