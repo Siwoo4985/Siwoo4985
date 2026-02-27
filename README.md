@@ -14,6 +14,7 @@
 ### 💡 About Me
 
 - 🇰🇷 I'm a student living in Korea.
+- 💻 I enjoy coding using AI.
 - 🎯 I believe in **connecting ideas, people, and passion** to make cool things happen.  
 
 ---
