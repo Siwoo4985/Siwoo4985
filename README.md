@@ -21,25 +21,6 @@
 
 ---
 
-### 💬 Steve Jobs Quotes
-
-> “Stay hungry, stay foolish.”  
-> — *Steve Jobs*
-
-> “Innovation distinguishes between a leader and a follower.”  
-> — *Steve Jobs*
-
-> “Design is not just what it looks like and feels like. Design is how it works.”  
-> — *Steve Jobs*
-
-> “The people who are crazy enough to think they can change the world are the ones who do.”  
-> — *Steve Jobs*
-
-> “Sometimes life hits you in the head with a brick. Don’t lose faith.”  
-> — *Steve Jobs*
-
----
-
 ### 🚀 Languages & Tools
 
 <p align="left">
