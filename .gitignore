@@ -1,0 +1,17 @@
+# Environment variables & cache
+.env
+cache/
+__pycache__/
+*.pyc
+.venv/
+
+# Workflows (if pushing via OAuth without workflow scope)
+.github/
+
+# Temporary local previews
+*.png
+preview.html
+
+# OS files
+.DS_Store
+Thumbs.db
