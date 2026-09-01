@@ -1,225 +1,259 @@
-"""Copyright 2026 Siwoo4985.
-GitHub README Profile Stats Generator.
-"""
+"""Generate truthful, current statistics for the profile SVGs."""
 
+from __future__ import annotations
+
+import json
 import os
-import re
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
-import requests
-from dotenv import load_dotenv
-from lxml import etree
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+import xml.etree.ElementTree as ET
 
-load_dotenv()
-
-# Configuration
-GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
-GITHUB_REST_URL = "https://api.github.com/users/{username}"
-GITHUB_REPOS_URL = "https://api.github.com/users/{username}/repos"
-
+API_ROOT = "https://api.github.com"
+GRAPHQL_URL = f"{API_ROOT}/graphql"
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 SVG_FILES = ("dark_mode.svg", "light_mode.svg")
 
 USER_NAME = os.getenv("USER_NAME", "Siwoo4985")
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN", "")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN") or os.getenv("ACCESS_TOKEN", "")
 
-HEADERS = {}
-if ACCESS_TOKEN:
-    HEADERS["authorization"] = f"token {ACCESS_TOKEN}"
+HEADERS = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "Siwoo4985-profile-stats",
+}
+if GITHUB_TOKEN:
+    HEADERS["Authorization"] = f"Bearer {GITHUB_TOKEN}"
 
 
-def fetch_stats_rest(username):
-    """Fetch basic stats using GitHub REST API without requiring auth token."""
-    user_url = GITHUB_REST_URL.format(username=username)
-    res = requests.get(user_url, timeout=10)
-    if res.status_code != 200:
-        print(f"[Warning] Failed to fetch REST user data: {res.status_code}")
-        return {"public_repos": 0, "followers": 0, "stars": 0}
-    
-    data = res.json()
-    public_repos = data.get("public_repos", 0)
-    followers = data.get("followers", 0)
+def api_request(
+    url: str,
+    *,
+    params: dict[str, object] | None = None,
+    payload: dict[str, object] | None = None,
+):
+    """Return decoded JSON from GitHub and fail on invalid responses."""
+    if params:
+        url = f"{url}?{urlencode(params)}"
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = dict(HEADERS)
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+    request = Request(url, data=body, headers=headers, method="POST" if body else "GET")
+    with urlopen(request, timeout=15) as response:
+        return json.load(response)
 
-    # Calculate stars across public repos
-    stars = 0
+
+def api_get(path: str, **params):
+    return api_request(f"{API_ROOT}{path}", params=params)
+
+
+def fetch_public_stats(username: str) -> dict[str, int | str]:
+    """Fetch profile and public repository statistics."""
+    user = api_get(f"/users/{username}")
+    repositories: list[dict] = []
+
     page = 1
     while True:
-        repos_url = GITHUB_REPOS_URL.format(username=username)
-        r = requests.get(repos_url, params={"per_page": 100, "page": page}, timeout=10)
-        if r.status_code != 200:
-            break
-        repos_data = r.json()
-        if not repos_data or not isinstance(repos_data, list):
-            break
-        for repo in repos_data:
-            stars += repo.get("stargazers_count", 0)
-        if len(repos_data) < 100:
+        batch = api_get(
+            f"/users/{username}/repos",
+            type="owner",
+            sort="updated",
+            per_page=100,
+            page=page,
+        )
+        if not isinstance(batch, list):
+            raise RuntimeError("GitHub returned an invalid repository response")
+        repositories.extend(batch)
+        if len(batch) < 100:
             break
         page += 1
 
+    showcase_candidates = [
+        repo
+        for repo in repositories
+        if not repo.get("fork") and repo.get("name") != username
+    ]
+    best_repo = max(
+        showcase_candidates,
+        key=lambda repo: (
+            int(repo.get("stargazers_count", 0)),
+            int(repo.get("forks_count", 0)),
+            repo.get("updated_at") or "",
+        ),
+        default=None,
+    )
+
     return {
-        "public_repos": public_repos,
-        "followers": followers,
-        "stars": stars
+        "repos": int(user.get("public_repos", len(repositories))),
+        "followers": int(user.get("followers", 0)),
+        "stars": sum(int(repo.get("stargazers_count", 0)) for repo in repositories),
+        "best_repo": best_repo.get("name", "-") if best_repo else "-",
     }
 
 
-def fetch_stats_graphql(username):
-    """Fetch commit count, additions, deletions, repos, followers, and stars via GraphQL."""
-    if not ACCESS_TOKEN:
-        print("[Info] No ACCESS_TOKEN provided. Using REST API fallback.")
+def fetch_yearly_contributions(username: str) -> dict[str, int] | None:
+    """Fetch this calendar year's commit and contribution counts."""
+    if not GITHUB_TOKEN:
+        print("[Warning] No token available; yearly contribution data is unavailable.")
         return None
 
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
     query = """
-    query ($login: String!) {
-        user(login: $login) {
-            repositories(first: 100, ownerAffiliations: [OWNER]) {
-                totalCount
-                nodes {
-                    stargazers {
-                        totalCount
-                    }
-                    defaultBranchRef {
-                        target {
-                            ... on Commit {
-                                history {
-                                    totalCount
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            followers {
-                totalCount
-            }
-            contributionsCollection {
-                totalCommitContributions
-                restrictedContributionsCount
-            }
+    query($login: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $login) {
+        contributionsCollection(from: $from, to: $to) {
+          totalCommitContributions
+          contributionCalendar { totalContributions }
         }
+      }
     }
     """
-    try:
-        res = requests.post(
-            GITHUB_GRAPHQL_URL,
-            json={"query": query, "variables": {"login": username}},
-            headers=HEADERS,
-            timeout=15,
-        )
-        if res.status_code != 200:
-            return None
-        payload = res.json()
-        if "errors" in payload:
-            return None
-        data = payload.get("data", {}).get("user", {})
-        if not data:
-            return None
+    result = api_request(
+        GRAPHQL_URL,
+        payload={
+            "query": query,
+            "variables": {
+                "login": username,
+                "from": start.isoformat(),
+                "to": now.isoformat(),
+            },
+        },
+    )
+    if result.get("errors"):
+        raise RuntimeError(f"GitHub GraphQL error: {result['errors'][0]['message']}")
 
-        repos = data.get("repositories", {}).get("totalCount", 0)
-        followers = data.get("followers", {}).get("totalCount", 0)
-        
-        stars = 0
-        commits = data.get("contributionsCollection", {}).get("totalCommitContributions", 0)
-        
-        for node in data.get("repositories", {}).get("nodes", []):
-            stars += node.get("stargazers", {}).get("totalCount", 0)
-            target = (node.get("defaultBranchRef") or {}).get("target") or {}
-            history = (target.get("history") or {}).get("totalCount", 0)
-            commits += history
-
-        return {
-            "public_repos": repos,
-            "followers": followers,
-            "stars": stars,
-            "commits": commits,
-        }
-    except Exception as e:
-        print(f"[Warning] GraphQL fetch error: {e}")
-        return None
-
-
-def get_all_stats(username):
-    """Combine REST and GraphQL stats with safe defaults."""
-    gql_stats = fetch_stats_graphql(username)
-    rest_stats = fetch_stats_rest(username)
-
-    repos = (gql_stats and gql_stats.get("public_repos")) or rest_stats.get("public_repos", 0)
-    followers = (gql_stats and gql_stats.get("followers")) or rest_stats.get("followers", 0)
-    stars = (gql_stats and gql_stats.get("stars")) or rest_stats.get("stars", 0)
-    commits = (gql_stats and gql_stats.get("commits")) or max(repos * 12, 15)
-    
-    # Estimate LOC from commit count if full commit tree traversal is unavailable
-    additions = commits * 85
-    deletions = commits * 30
-    total_loc = additions + deletions
-
+    collection = result["data"]["user"]["contributionsCollection"]
     return {
-        "repos": repos,
-        "followers": followers,
-        "stars": stars,
-        "commits": commits,
-        "loc": total_loc,
-        "additions": additions,
-        "deletions": deletions,
+        "commits": int(collection["totalCommitContributions"]),
+        "contributions": int(collection["contributionCalendar"]["totalContributions"]),
     }
 
 
-def update_svg_file(filepath, stats):
-    """Update SVG DOM nodes for dynamic stats."""
-    if not Path(filepath).exists():
-        print(f"[Error] File not found: {filepath}")
-        return
+def get_stats(username: str) -> dict[str, int | str]:
+    """Combine public profile data with exact yearly contribution data."""
+    stats = fetch_public_stats(username)
+    yearly = fetch_yearly_contributions(username)
+    stats.update(yearly or {"commits": "n/a", "contributions": "n/a"})
+    return stats
 
-    parser = etree.XMLParser(remove_blank_text=False)
-    tree = etree.parse(filepath, parser)
+
+def local_name(element: ET.Element) -> str:
+    return element.tag.rsplit("}", 1)[-1]
+
+
+def has_class(element: ET.Element, class_name: str) -> bool:
+    return class_name in element.get("class", "").split()
+
+
+def find_row(root: ET.Element, row_id: str, label: str | None = None):
+    for element in root.iter():
+        if element.get("id") == row_id:
+            return element
+    if label:
+        for element in root.iter():
+            if local_name(element) == "text" and label in "".join(element.itertext()):
+                element.set("id", row_id)
+                return element
+    return None
+
+
+def find_value_node(row: ET.Element):
+    for class_name in ("accent", "value"):
+        for element in row.iter():
+            if has_class(element, class_name):
+                return element
+    return None
+
+
+def set_row_value(
+    root: ET.Element,
+    row_id: str,
+    value: int | str,
+    label: str | None = None,
+):
+    row = find_row(root, row_id, label)
+    if row is None:
+        raise RuntimeError(f"SVG row not found: {row_id}")
+    value_node = find_value_node(row)
+    if value_node is None:
+        raise RuntimeError(f"SVG value node not found: {row_id}")
+    value_node.text = f"{value:,}" if isinstance(value, int) else str(value)
+
+
+def convert_legacy_loc_row(root: ET.Element, contributions: int | str):
+    """Replace the fabricated LOC estimate with an exact yearly contribution count."""
+    row = find_row(root, "contrib_row")
+    if row is None:
+        row = find_row(root, "loc_row")
+    if row is None:
+        raise RuntimeError("SVG contribution row not found")
+    row.set("id", "contrib_row")
+
+    children = list(row)
+    key_node = next((child for child in children if has_class(child, "key")), None)
+    value_node = next((child for child in children if has_class(child, "accent")), None)
+    if key_node is None or value_node is None:
+        raise RuntimeError("SVG contribution row has an invalid structure")
+
+    key_node.text = "Contribs (year)."
+    key_node.tail = " "
+    value_node.text = (
+        f"{contributions:,}" if isinstance(contributions, int) else str(contributions)
+    )
+    value_node.tail = None
+    for child in children:
+        if child not in (key_node, value_node):
+            row.remove(child)
+
+
+def update_svg_file(filepath: str, stats: dict[str, int | str]):
+    path = Path(filepath)
+    if not path.is_file():
+        raise FileNotFoundError(filepath)
+
+    ET.register_namespace("", SVG_NAMESPACE)
+    tree = ET.parse(path)
     root = tree.getroot()
 
-    # Define XML namespaces if needed
-    ns = {"svg": "http://www.w3.org/2000/svg"}
+    best_repo = str(stats["best_repo"])
+    if len(best_repo) > 28:
+        best_repo = f"{best_repo[:27]}…"
 
-    def update_node(row_id, new_content):
-        # Search by id attribute
-        elements = root.xpath(f"//*[@id='{row_id}']")
-        if not elements:
-            # Fallback search without namespace
-            elements = [el for el in root.iter() if el.get("id") == row_id]
-        if elements:
-            el = elements[0]
-            # Replace content of accent/data element
-            accents = el.xpath(".//*[contains(@class, 'accent')]")
-            if accents:
-                accents[0].text = str(new_content)
+    set_row_value(root, "best_repo_row", best_repo, "Best Repo")
+    set_row_value(root, "repo_row", stats["repos"])
+    set_row_value(root, "commit_row", stats["commits"])
+    set_row_value(root, "star_row", stats["stars"])
+    set_row_value(root, "follower_row", stats["followers"])
+    convert_legacy_loc_row(root, stats["contributions"])
 
-    update_node("repo_row", f"{stats['repos']}")
-    update_node("commit_row", f"{stats['commits']:,}")
-    update_node("star_row", f"{stats['stars']}")
-    update_node("follower_row", f"{stats['followers']}")
+    commit_row = find_row(root, "commit_row")
+    commit_key = next(
+        (element for element in commit_row.iter() if has_class(element, "key")), None
+    )
+    if commit_key is None:
+        raise RuntimeError("SVG commit label not found")
+    commit_key.text = "Commits (year).."
 
-    # Update LOC row specially
-    loc_rows = [el for el in root.iter() if el.get("id") == "loc_row"]
-    if loc_rows:
-        el = loc_rows[0]
-        accents = el.xpath(".//*[contains(@class, 'accent')]")
-        if accents:
-            accents[0].text = f"{stats['loc']:,} lines"
-        adds = el.xpath(".//*[contains(@class, 'addColor')]")
-        if adds:
-            adds[0].text = f"+{stats['additions']:,}"
-        dels = el.xpath(".//*[contains(@class, 'delColor')]")
-        if dels:
-            dels[0].text = f"-{stats['deletions']:,}"
-
-    tree.write(filepath, encoding="utf-8", xml_declaration=True)
-    print(f"[Success] Updated {filepath}")
+    tree.write(path, encoding="utf-8", xml_declaration=True)
+    ET.parse(path)
+    print(f"[Success] Updated and validated {filepath}")
 
 
-def main():
-    print(f"Fetching GitHub stats for user: {USER_NAME}...")
-    stats = get_all_stats(USER_NAME)
-    print(f"Fetched Stats: {stats}")
-
-    for svg in SVG_FILES:
-        update_svg_file(svg, stats)
+def main() -> None:
+    print(f"Fetching GitHub statistics for {USER_NAME}...")
+    stats = get_stats(USER_NAME)
+    print(f"Fetched statistics: {stats}")
+    for svg_file in SVG_FILES:
+        update_svg_file(svg_file, stats)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        print(f"[Error] {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
