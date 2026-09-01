@@ -195,51 +195,6 @@ def simplify_row(
             row.remove(child)
 
 
-def rewrite_labeled_row(
-    root: ET.Element,
-    current_label: str,
-    new_label: str,
-    new_value: str,
-):
-    row = find_row(root, "unused", current_label)
-    if row is None:
-        raise RuntimeError(f"SVG profile row not found: {current_label}")
-    row.attrib.pop("id", None)
-    key_node = next((element for element in row if has_class(element, "key")), None)
-    value_node = next((element for element in row if has_class(element, "value")), None)
-    if key_node is None or value_node is None:
-        raise RuntimeError(f"SVG profile row has an invalid structure: {current_label}")
-    key_node.text = new_label
-    value_node.text = new_value
-
-
-def sanitize_public_profile(root: ET.Element):
-    """Keep the public card useful without exposing contact or device details."""
-    replacements = (
-        ("Hardware........", "Role............", "Student & Builder"),
-        ("OS..............", "Focus...........", "Math, Science, Software"),
-        ("Kernel..........", "Interests.......", "AI Systems, SwiftUI"),
-        ("Use.AI..........", "Tools...........", "Python, Swift, VS Code"),
-        ("Study.Lang.Prog.", "Learning........", "SwiftUI, Applied AI"),
-        ("Lang.Computer...", "Web.............", "HTML, CSS, JavaScript"),
-        ("Lang.Real.......", "Language........", "Korean"),
-        ("IDE.............", "Environment.....", "Apple Ecosystem"),
-        ("Email...........", "Building........", "Micro-Diffusion & more"),
-        ("X...............", "Exploring.......", "AI systems and creative tools"),
-        ("Instagram.......", "Profile.........", "github.com/Siwoo4985"),
-    )
-    for current_label, new_label, new_value in replacements:
-        # Already-sanitized SVGs use the new label on later runs.
-        if any(
-            current_label in "".join(element.itertext()) for element in root.iter()
-        ):
-            rewrite_labeled_row(root, current_label, new_label, new_value)
-
-    for element in root.iter():
-        if local_name(element) == "text" and "CONTACT INFORMATION" in (element.text or ""):
-            element.text = "┌─ CURRENT SIGNAL ──────────────────────────────┐"
-
-
 def convert_legacy_rows(root: ET.Element, stats: dict[str, int | str]):
     """Replace fabricated commit/LOC estimates with exact public metrics."""
     simplify_row(
@@ -276,7 +231,6 @@ def update_svg_file(filepath: str, stats: dict[str, int | str]):
     set_row_value(root, "star_row", stats["stars"])
     set_row_value(root, "follower_row", stats["followers"])
     convert_legacy_rows(root, stats)
-    sanitize_public_profile(root)
 
     tree.write(path, encoding="utf-8", xml_declaration=True)
     ET.parse(path)
