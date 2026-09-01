@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +45,12 @@ def api_request(
     request = Request(url, data=body, headers=headers, method="POST" if body else "GET")
     with urlopen(request, timeout=15) as response:
         return json.load(response)
+
+
+def fetch_text(url: str) -> str:
+    request = Request(url, headers=HEADERS)
+    with urlopen(request, timeout=15) as response:
+        return response.read().decode("utf-8")
 
 
 def api_get(path: str, **params):
@@ -94,50 +101,24 @@ def fetch_public_stats(username: str) -> dict[str, int | str]:
     }
 
 
-def fetch_yearly_contributions(username: str) -> dict[str, int] | None:
-    """Fetch this calendar year's commit and contribution counts."""
-    if not GITHUB_TOKEN:
-        print("[Warning] No token available; yearly contribution data is unavailable.")
-        return None
-
-    now = datetime.now(timezone.utc)
-    start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
-    query = """
-    query($login: String!, $from: DateTime!, $to: DateTime!) {
-      user(login: $login) {
-        contributionsCollection(from: $from, to: $to) {
-          totalCommitContributions
-          contributionCalendar { totalContributions }
-        }
-      }
-    }
-    """
-    result = api_request(
-        GRAPHQL_URL,
-        payload={
-            "query": query,
-            "variables": {
-                "login": username,
-                "from": start.isoformat(),
-                "to": now.isoformat(),
-            },
-        },
+def fetch_yearly_contributions(username: str) -> int:
+    """Fetch the public contribution-calendar total for the current year."""
+    year = datetime.now(timezone.utc).year
+    document = fetch_text(
+        f"https://github.com/users/{username}/contributions"
+        f"?from={year}-01-01&to={year}-12-31"
     )
-    if result.get("errors"):
-        raise RuntimeError(f"GitHub GraphQL error: {result['errors'][0]['message']}")
-
-    collection = result["data"]["user"]["contributionsCollection"]
-    return {
-        "commits": int(collection["totalCommitContributions"]),
-        "contributions": int(collection["contributionCalendar"]["totalContributions"]),
-    }
+    match = re.search(r"([\d,]+)\s+contributions?\s+in\s+\d{4}", document)
+    if not match:
+        raise RuntimeError("GitHub contribution total was not found")
+    return int(match.group(1).replace(",", ""))
 
 
 def get_stats(username: str) -> dict[str, int | str]:
-    """Combine public profile data with exact yearly contribution data."""
+    """Combine exact public profile statistics."""
     stats = fetch_public_stats(username)
-    yearly = fetch_yearly_contributions(username)
-    stats.update(yearly or {"commits": "n/a", "contributions": "n/a"})
+    stats["contributions"] = fetch_yearly_contributions(username)
+    stats["last_sync"] = datetime.now(timezone.utc).strftime("%Y-%m-%d UTC")
     return stats
 
 
@@ -184,30 +165,52 @@ def set_row_value(
     value_node.text = f"{value:,}" if isinstance(value, int) else str(value)
 
 
-def convert_legacy_loc_row(root: ET.Element, contributions: int | str):
-    """Replace the fabricated LOC estimate with an exact yearly contribution count."""
-    row = find_row(root, "contrib_row")
+def simplify_row(
+    root: ET.Element,
+    current_id: str,
+    new_id: str,
+    label: str,
+    value: int | str,
+):
+    """Convert a legacy multi-value row into one truthful metric."""
+    row = find_row(root, new_id)
     if row is None:
-        row = find_row(root, "loc_row")
+        row = find_row(root, current_id)
     if row is None:
-        raise RuntimeError("SVG contribution row not found")
-    row.set("id", "contrib_row")
+        raise RuntimeError(f"SVG row not found: {current_id}")
+    row.set("id", new_id)
 
     children = list(row)
     key_node = next((child for child in children if has_class(child, "key")), None)
-    value_node = next((child for child in children if has_class(child, "accent")), None)
+    value_node = find_value_node(row)
     if key_node is None or value_node is None:
-        raise RuntimeError("SVG contribution row has an invalid structure")
+        raise RuntimeError(f"SVG row has an invalid structure: {current_id}")
 
-    key_node.text = "Contribs (year)."
+    key_node.text = label
     key_node.tail = " "
-    value_node.text = (
-        f"{contributions:,}" if isinstance(contributions, int) else str(contributions)
-    )
+    value_node.text = f"{value:,}" if isinstance(value, int) else str(value)
     value_node.tail = None
     for child in children:
         if child not in (key_node, value_node):
             row.remove(child)
+
+
+def convert_legacy_rows(root: ET.Element, stats: dict[str, int | str]):
+    """Replace fabricated commit/LOC estimates with exact public metrics."""
+    simplify_row(
+        root,
+        "commit_row",
+        "contrib_row",
+        "Contribs (year).",
+        stats["contributions"],
+    )
+    simplify_row(
+        root,
+        "loc_row",
+        "sync_row",
+        "Last Sync.......",
+        stats["last_sync"],
+    )
 
 
 def update_svg_file(filepath: str, stats: dict[str, int | str]):
@@ -225,18 +228,9 @@ def update_svg_file(filepath: str, stats: dict[str, int | str]):
 
     set_row_value(root, "best_repo_row", best_repo, "Best Repo")
     set_row_value(root, "repo_row", stats["repos"])
-    set_row_value(root, "commit_row", stats["commits"])
     set_row_value(root, "star_row", stats["stars"])
     set_row_value(root, "follower_row", stats["followers"])
-    convert_legacy_loc_row(root, stats["contributions"])
-
-    commit_row = find_row(root, "commit_row")
-    commit_key = next(
-        (element for element in commit_row.iter() if has_class(element, "key")), None
-    )
-    if commit_key is None:
-        raise RuntimeError("SVG commit label not found")
-    commit_key.text = "Commits (year).."
+    convert_legacy_rows(root, stats)
 
     tree.write(path, encoding="utf-8", xml_declaration=True)
     ET.parse(path)
