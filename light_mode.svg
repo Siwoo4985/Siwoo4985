@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <svg xmlns="http://www.w3.org/2000/svg" font-family="Consolas, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace" width="1000px" height="620px">
 <style>
 .key { fill: #000000; font-weight: bold; font-size: 13.5px; }
@@ -11,35 +11,35 @@
 .ascii { fill: #000000; font-size: 10.5px; font-weight: bold; }
 text, tspan { white-space: pre; }
 </style>
-<rect width="1000px" height="620px" fill="#ffffff" rx="10" stroke="#d0d7de" stroke-width="1.5"/>
+<rect width="1000px" height="620px" fill="#ffffff" rx="10" stroke="#d0d7de" stroke-width="1.5" />
 
-<!-- Left Column: Specs, Contact & Stats (x=20) -->
+
 <text x="20" y="36" class="header">┌─ SYSTEM SPECIFICATIONS ───────────────────────┐</text>
 <text x="20" y="62" class="comment"># System &amp; User Metadata</text>
 <text x="20" y="86"><tspan class="key">User............</tspan> <tspan class="value">S.P. (Siwoo4985)</tspan></text>
-<text x="20" y="110"><tspan class="key">Hardware........</tspan> <tspan class="value">MacBook M1 8GB RAM</tspan></text>
-<text x="20" y="134"><tspan class="key">OS..............</tspan> <tspan class="value">macOS 27 Golden Gate</tspan></text>
-<text x="20" y="158"><tspan class="key">Kernel..........</tspan> <tspan class="value">Student (Gifted Education Center)</tspan></text>
-<text x="20" y="182"><tspan class="key">Use.AI..........</tspan> <tspan class="value">Codex, Claude Code, Antigravity</tspan></text>
-<text x="20" y="206"><tspan class="key">Study.Lang.Prog.</tspan> <tspan class="value">Python, Swift</tspan></text>
-<text x="20" y="230"><tspan class="key">Lang.Computer...</tspan> <tspan class="value">HTML, CSS</tspan></text>
-<text x="20" y="254"><tspan class="key">Lang.Real.......</tspan> <tspan class="value">Korean</tspan></text>
-<text x="20" y="278"><tspan class="key">IDE.............</tspan> <tspan class="value">Visual Studio Code</tspan></text>
+<text x="20" y="110"><tspan class="key">Role............</tspan> <tspan class="value">Student &amp; Builder</tspan></text>
+<text x="20" y="134"><tspan class="key">Focus...........</tspan> <tspan class="value">Math, Science, Software</tspan></text>
+<text x="20" y="158"><tspan class="key">Interests.......</tspan> <tspan class="value">AI Systems, SwiftUI</tspan></text>
+<text x="20" y="182"><tspan class="key">Tools...........</tspan> <tspan class="value">Python, Swift, VS Code</tspan></text>
+<text x="20" y="206"><tspan class="key">Learning........</tspan> <tspan class="value">SwiftUI, Applied AI</tspan></text>
+<text x="20" y="230"><tspan class="key">Web.............</tspan> <tspan class="value">HTML, CSS, JavaScript</tspan></text>
+<text x="20" y="254"><tspan class="key">Language........</tspan> <tspan class="value">Korean</tspan></text>
+<text x="20" y="278"><tspan class="key">Environment.....</tspan> <tspan class="value">Apple Ecosystem</tspan></text>
 
-<text x="20" y="322" class="header">┌─ CONTACT INFORMATION ─────────────────────────┐</text>
-<text x="20" y="348"><tspan class="key">Email...........</tspan> <tspan class="value">siwoose@gmail.com</tspan></text>
-<text x="20" y="372"><tspan class="key">X...............</tspan> <tspan class="value">@sp4985</tspan></text>
-<text x="20" y="396"><tspan class="key">Instagram.......</tspan> <tspan class="value">sp4985.insta</tspan></text>
+<text x="20" y="322" class="header">┌─ CURRENT SIGNAL ──────────────────────────────┐</text>
+<text x="20" y="348"><tspan class="key">Building........</tspan> <tspan class="value">Micro-Diffusion &amp; more</tspan></text>
+<text x="20" y="372"><tspan class="key">Exploring.......</tspan> <tspan class="value">AI systems and creative tools</tspan></text>
+<text x="20" y="396"><tspan class="key">Profile.........</tspan> <tspan class="value">github.com/Siwoo4985</tspan></text>
 
 <text x="20" y="440" class="header">┌─ DYNAMIC GITHUB STATS ────────────────────────┐</text>
-<text x="20" y="466"><tspan class="key">Best Repo.......</tspan> <tspan class="value">Micro-Diffusion</tspan></text>
+<text x="20" y="466" id="best_repo_row"><tspan class="key">Best Repo.......</tspan> <tspan class="value">Micro-Diffusion</tspan></text>
 <text x="20" y="490" id="repo_row"><tspan class="key">Repos...........</tspan> <tspan class="accent">9</tspan></text>
-<text x="20" y="514" id="commit_row"><tspan class="key">Commits.........</tspan> <tspan class="accent">108</tspan></text>
-<text x="20" y="538" id="loc_row"><tspan class="key">GitHub LOC......</tspan> <tspan class="accent">12,420 lines</tspan> (<tspan class="addColor">+9,180</tspan>, <tspan class="delColor">-3,240</tspan>)</text>
-<text x="20" y="562" id="star_row"><tspan class="key">Stars...........</tspan> <tspan class="accent">36</tspan></text>
+<text x="20" y="514" id="contrib_row"><tspan class="key">Contribs (year).</tspan> <tspan class="accent">177</tspan></text>
+<text x="20" y="538" id="sync_row"><tspan class="key">Last Sync.......</tspan> <tspan class="accent">2026-09-01 UTC</tspan></text>
+<text x="20" y="562" id="star_row"><tspan class="key">Stars...........</tspan> <tspan class="accent">38</tspan></text>
 <text x="20" y="586" id="follower_row"><tspan class="key">Followers.......</tspan> <tspan class="accent">0</tspan></text>
 
-<!-- Right Column: Full Bounded ASCII Star Art (x=445) -->
+
 <text x="445" y="18" class="ascii">
   <tspan x="445" y="18.0">                                                                                            </tspan>
   <tspan x="445" y="29.8">                                                                                            </tspan>
