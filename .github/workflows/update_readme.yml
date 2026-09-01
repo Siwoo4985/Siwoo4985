@@ -1,37 +1,38 @@
-name: Update Profile Readme Stats
+name: Update Profile Stats
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-stats
+  cancel-in-progress: true
+
 jobs:
-  update-readme:
+  update-profile:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Checkout Repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.12"
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run Stats Generator
+      - name: Generate profile statistics
         env:
-          USER_NAME: 'Siwoo4985'
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          python generate_readme.py
+          USER_NAME: Siwoo4985
+        run: python generate_readme.py
 
-      - name: Commit and Push Changes
+      - name: Commit updated SVGs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-update profile stats SVGs [skip ci]"
-          file_pattern: "*.svg"
+          commit_message: "chore: refresh profile statistics [skip ci]"
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          file_pattern: dark_mode.svg light_mode.svg
