@@ -1,4 +1,4 @@
-name: Actions checkout health check
+name: Create qualifying bot PR for YOLO
 
 on:
   push:
@@ -12,12 +12,23 @@ permissions:
   pull-requests: write
 
 jobs:
-  healthcheck:
+  create-yolo-pr:
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 5
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Verify checkout
-        run: echo "checkout-ok"
+      - name: Create bot-authored pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: achievement/yolo-bot-20260902-qualifying
+        run: |
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH_NAME"
+          sed -i 's/- \[ \] YOLO (requires merging a qualifying pull request without review)/- [x] YOLO (merged a bot-authored pull request without review)/' ACHIEVEMENTS.md
+          git rm .github/workflows/actions-healthcheck.yml
+          git add ACHIEVEMENTS.md
+          git commit -m "docs: record YOLO achievement"
+          git push origin "$BRANCH_NAME"
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$BRANCH_NAME" --title "docs: record YOLO achievement" --body "Bot-authored PR for the GitHub YOLO achievement. Merge without submitting a review. This PR removes its temporary workflow."
