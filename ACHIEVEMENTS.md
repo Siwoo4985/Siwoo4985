@@ -1,8 +1,13 @@
 # GitHub Achievements Tracker
 
-This repository tracks GitHub achievements unlocked for profile @Siwoo4985.
+Verified against the public profile on 2026-09-02.
 
-- [x] Quickdraw ⚡ (Closed issue within 5m)
-- [x] Pair Extraordinaire 👥 (Co-authored merged PR)
-- [x] YOLO 😜 (Merged PR without review)
-- [x] Pull Shark 🦈 (Merged 2 PRs)
+- [x] Starstruck (repository reached the required star count)
+- [x] Quickdraw (closed an issue within 5 minutes)
+- [x] Pair Extraordinaire (co-authored a commit in a merged pull request)
+- [ ] YOLO (requires merging a qualifying pull request without review)
+- [ ] Pull Shark (requires two qualifying authored pull requests to be merged)
+- [ ] Galaxy Brain (requires two accepted answers in GitHub Discussions)
+- [ ] Public Sponsor (requires sponsoring eligible open-source work)
+
+Heart On Your Sleeve and Open Sourcerer are not generally earnable because their rollout remains experimental.
