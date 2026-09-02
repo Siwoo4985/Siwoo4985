@@ -1,4 +1,4 @@
-name: Actions permission health check
+name: Actions checkout health check
 
 on:
   push:
@@ -16,5 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - name: Verify write-token startup
-        run: echo "permissions-ok"
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify checkout
+        run: echo "checkout-ok"
