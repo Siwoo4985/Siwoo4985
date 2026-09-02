@@ -1,0 +1,36 @@
+name: One-time YOLO achievement PR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/achievement-yolo.yml
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-bot-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create a bot-authored pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: achievement/yolo-bot-20260902
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH_NAME"
+          mkdir -p achievement-proof
+          printf '%s\n' '# YOLO achievement proof' '' 'This pull request was authored by github-actions[bot] and merged by Siwoo4985 without a review.' > achievement-proof/yolo.md
+          git rm .github/workflows/achievement-yolo.yml
+          git add achievement-proof/yolo.md
+          git commit -m "docs: add YOLO achievement proof"
+          git push origin "$BRANCH_NAME"
+          gh pr create --base main --head "$BRANCH_NAME" --title "docs: add YOLO achievement proof" --body "One-time bot-authored PR for the GitHub YOLO achievement. The workflow removes itself in this PR."
