@@ -1,37 +1,38 @@
-name: Update Profile Readme Stats
+name: Update Profile Stats
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/update_readme.yml
   workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: write
+
+concurrency:
+  group: profile-stats
+  cancel-in-progress: true
 
 jobs:
-  create-yolo-pr:
+  update-profile:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Create bot-authored pull request and restore workflow
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate profile statistics
         env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: achievement/yolo-bot-20260902-final
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git push origin --delete achievement/yolo-bot-20260902 || true
-          git switch -c "$BRANCH_NAME"
-          git show HEAD^:.github/workflows/update_readme.yml > .github/workflows/update_readme.yml
-          sed -i 's/- \[ \] YOLO (requires merging a qualifying pull request without review)/- [x] YOLO (merged a bot-authored pull request without review)/' ACHIEVEMENTS.md
-          git add .github/workflows/update_readme.yml ACHIEVEMENTS.md
-          git commit -m "docs: record YOLO achievement"
-          git push origin "$BRANCH_NAME"
-          gh pr create --base main --head "$BRANCH_NAME" --title "docs: record YOLO achievement" --body "Bot-authored PR for the GitHub YOLO achievement. This restores the regular profile workflow in the same merge."
+          USER_NAME: Siwoo4985
+        run: python generate_readme.py
+
+      - name: Commit updated SVGs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: refresh profile statistics [skip ci]"
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          file_pattern: dark_mode.svg light_mode.svg
