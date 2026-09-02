@@ -1,4 +1,4 @@
-name: Actions health check
+name: Actions permission health check
 
 on:
   push:
@@ -7,12 +7,14 @@ on:
     paths:
       - .github/workflows/actions-healthcheck.yml
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   healthcheck:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - name: Verify runner startup
-        run: echo "actions-ok"
+      - name: Verify write-token startup
+        run: echo "permissions-ok"
