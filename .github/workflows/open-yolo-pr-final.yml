@@ -1,0 +1,22 @@
+name: Open final YOLO pull request
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/open-yolo-pr-final.yml
+
+permissions:
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Open bot-authored pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head achievement/yolo-bot-20260902-qualifying --title "docs: record YOLO achievement" --body "Bot-authored PR for the GitHub YOLO achievement. Merge without submitting a review."
