@@ -14,7 +14,7 @@ permissions:
 jobs:
   create-bot-pr:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,34 +22,15 @@ jobs:
       - name: Create bot-authored pull request
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: achievement/yolo-bot-20260902-v2
+          BRANCH_NAME: achievement/yolo-bot-20260902-v3
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git push origin --delete achievement/yolo-bot-20260902 || true
           git switch -c "$BRANCH_NAME"
-          python - <<'PY'
-          from pathlib import Path
-          path = Path("ACHIEVEMENTS.md")
-          text = path.read_text()
-          old = "- [ ] YOLO (requires merging a qualifying pull request without review)"
-          new = "- [x] YOLO (merged a bot-authored pull request without review)"
-          if old not in text:
-              raise SystemExit("Expected YOLO tracker line was not found")
-          path.write_text(text.replace(old, new))
-          PY
+          sed -i 's/- \[ \] YOLO (requires merging a qualifying pull request without review)/- [x] YOLO (merged a bot-authored pull request without review)/' ACHIEVEMENTS.md
           git rm .github/workflows/achievement-yolo.yml
           git add ACHIEVEMENTS.md
           git commit -m "docs: record YOLO achievement"
           git push origin "$BRANCH_NAME"
-          PR_URL=$(gh pr create --base main --head "$BRANCH_NAME" --title "docs: record YOLO achievement" --body "Bot-authored one-time PR. Merge without submitting a review to satisfy the GitHub YOLO achievement condition. This PR removes its own temporary workflow.")
-          PR_NUMBER=$(gh pr view "$PR_URL" --json number --jq .number)
-          for attempt in $(seq 1 60); do
-            PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq .state)
-            if [ "$PR_STATE" = "MERGED" ]; then
-              git push origin --delete "$BRANCH_NAME" || true
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "PR was created successfully; branch cleanup will be left to repository settings."
+          gh pr create --base main --head "$BRANCH_NAME" --title "docs: record YOLO achievement" --body "Bot-authored one-time PR for the GitHub YOLO achievement. This PR removes its temporary workflow."
