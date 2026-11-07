@@ -1,6 +1,8 @@
 name: Update Profile Stats
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -12,27 +14,32 @@ concurrency:
 
 jobs:
   update-profile:
-    runs-on: ubuntu-latest
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+        run: |
+          git init
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          git fetch --depth=1 origin "$GITHUB_SHA"
+          git checkout --detach FETCH_HEAD
 
       - name: Generate profile statistics
         env:
           USER_NAME: Siwoo4985
-        run: python generate_readme.py
+        run: python3 generate_readme.py
 
       - name: Commit updated SVGs
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: refresh profile statistics [skip ci]"
-          commit_user_name: github-actions[bot]
-          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
-          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-          file_pattern: dark_mode.svg light_mode.svg
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add dark_mode.svg light_mode.svg
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'chore: refresh profile statistics [skip ci]'
+          gh auth setup-git --hostname github.com
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
