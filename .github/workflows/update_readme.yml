@@ -28,6 +28,7 @@ jobs:
       - name: Generate profile statistics
         env:
           USER_NAME: Siwoo4985
+          GITHUB_TOKEN: ${{ github.token }}
         run: python3 generate_readme.py
 
       - name: Commit updated SVGs

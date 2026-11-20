@@ -25,8 +25,6 @@ HEADERS = {
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "Siwoo4985-profile-stats",
 }
-if GITHUB_TOKEN:
-    HEADERS["Authorization"] = f"Bearer {GITHUB_TOKEN}"
 
 
 def api_request(
@@ -40,6 +38,8 @@ def api_request(
         url = f"{url}?{urlencode(params)}"
     body = json.dumps(payload).encode("utf-8") if payload is not None else None
     headers = dict(HEADERS)
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
     if body is not None:
         headers["Content-Type"] = "application/json"
     request = Request(url, data=body, headers=headers, method="POST" if body else "GET")
